@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\shell\Open with Photoshop]
+@="Відкрити за допомогою Photoshop"
+"Icon"="\"C:\\Program Files\\Adobe\\Adobe Photoshop 2025\\Photoshop.exe\""
+
+[HKEY_CLASSES_ROOT\*\shell\Open with Photoshop\command]
+@="\"C:\\Program Files\\Adobe\\Adobe Photoshop 2025\\Photoshop.exe\" \"%1\""

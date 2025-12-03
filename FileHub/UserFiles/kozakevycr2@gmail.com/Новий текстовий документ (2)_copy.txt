@@ -1,0 +1,8 @@
+cd server
+npm run start
+
+cd app
+npm run start
+
+cd .\tests\
+npm run test 

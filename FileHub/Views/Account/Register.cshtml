@@ -1,0 +1,103 @@
+﻿@model FileHub.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Реєстрація - FileHub";
+    Layout = null; // Вимикаємо стандартний Layout, щоб мати повний контроль над версткою
+}
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Ті самі стилі, що й на сторінці входу для консистентності */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .branding-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .form-section {
+            background-color: #ffffff;
+        }
+
+        .form-control-lg {
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+            border: 1px solid #eee;
+            font-size: 1rem;
+            padding: 0.8rem 1rem;
+        }
+
+            .form-control-lg:focus {
+                background-color: #fff;
+                box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.1);
+                border-color: #764ba2;
+            }
+
+        .form-label-small {
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid vh-100">
+        <div class="row h-100">
+            <div class="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center branding-section p-5">
+                <div class="text-center">
+                    <h1 class="display-3 fw-bold mb-3">FileHub 🚀</h1>
+                    <p class="lead">Приєднуйтесь до спільноти.<br>Безпечне сховище для ваших ідей.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-12 d-flex align-items-center justify-content-center form-section">
+                <div style="width: 100%; max-width: 480px; padding: 20px;">
+
+                    <div class="mb-4">
+                        <h2 class="fw-bold text-dark">Створити акаунт</h2>
+                        <p class="text-muted">Заповніть форму, щоб почати користуватися сервісом.</p>
+                    </div>
+
+                    <form method="post" asp-controller="Account" asp-action="Register">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 text-small" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label text-uppercase text-muted form-label-small">Email</label>
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="name@company.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label text-uppercase text-muted form-label-small">Пароль</label>
+                            <input asp-for="Password" class="form-control form-control-lg" placeholder="Мінімум 6 символів" type="password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="PasswordConfirm" class="form-label text-uppercase text-muted form-label-small">Підтвердження пароля</label>
+                            <input asp-for="PasswordConfirm" class="form-control form-control-lg" placeholder="Повторіть пароль" type="password" />
+                            <span asp-validation-for="PasswordConfirm" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid mb-4">
+                            <button type="submit" class="btn btn-dark btn-lg py-3 fw-bold">Зареєструватися</button>
+                        </div>
+
+                        <div class="text-center text-muted">
+                            Вже маєте акаунт?
+                            <a asp-controller="Account" asp-action="Login" class="fw-bold text-decoration-none" style="color: #764ba2;">Увійти</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

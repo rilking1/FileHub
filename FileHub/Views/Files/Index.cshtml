@@ -1,0 +1,451 @@
+﻿@model IEnumerable<FileHub.Models.FileItem>
+@{
+    ViewData["Title"] = "Мій Диск";
+    // Отримуємо поточні параметри для збереження стану при кліках
+    var currentSort = ViewBag.Sort as string ?? "date_desc";
+    var currentFilter = ViewBag.Filter as string ?? "all";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --bg-color: #f3f4f6;
+    }
+
+    body {
+        background-color: var(--bg-color);
+    }
+
+    /* Toolbar Styling */
+    .file-toolbar {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Dropzone */
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        background: white;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: var(--primary-color);
+            background-color: #eef2ff;
+        }
+
+    /* --- File Card Styles --- */
+    .file-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .file-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+    /* Верхня частина картки з іконкою */
+    .card-icon-area {
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 3rem;
+        position: relative;
+    }
+
+    /* Бейдж розширення */
+    .file-type-badge {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Дії (три крапки) */
+    .file-card-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+    }
+
+    /* View Toggler */
+    .view-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    /* Code preview block */
+    .code-preview {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 1rem;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.9rem;
+        color: #212529;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+</style>
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">📂 Мій Диск</h2>
+            <p class="text-muted small mb-0">Всього файлів: @Model.Count()</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill px-4" onclick="document.getElementById('fileInput').click()">
+                <i class="bi bi-cloud-upload me-2"></i> Завантажити
+            </button>
+        </div>
+    </div>
+
+    <div id="dropZone" class="upload-area p-4 text-center mb-4">
+        <div class="d-flex flex-column align-items-center justify-content-center">
+            <i class="bi bi-cloud-arrow-up display-6 text-primary mb-2"></i>
+            <h5 class="fw-semibold">Перетягніть файли сюди</h5>
+            <p class="text-muted small mb-0">або натисніть кнопку "Завантажити"</p>
+        </div>
+        <div class="progress mt-3 d-none" id="uploadProgressContainer" style="height: 6px;">
+            <div class="progress-bar bg-primary" id="uploadProgressBar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <input type="file" id="fileInput" name="file" multiple hidden />
+    </div>
+
+    <div class="file-toolbar d-flex flex-wrap gap-3 justify-content-between align-items-center">
+        <div class="d-flex gap-2">
+            <a href="?sort=@currentSort&filter=all" class="btn btn-sm rounded-pill @(currentFilter == "all" ? "btn-dark" : "btn-light")">
+                Усі файли
+            </a>
+            <a href="?sort=@currentSort&filter=c" class="btn btn-sm rounded-pill @(currentFilter == "c" ? "btn-dark" : "btn-light")">
+                <i class="bi bi-filetype-c"></i> .c
+            </a>
+            <a href="?sort=@currentSort&filter=jpg" class="btn btn-sm rounded-pill @(currentFilter == "jpg" ? "btn-dark" : "btn-light")">
+                <i class="bi bi-filetype-jpg"></i> .jpg
+            </a>
+        </div>
+
+        <div class="d-flex gap-3 align-items-center">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle border-0" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar-event"></i> Сортування
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?sort=date_asc&filter=@currentFilter">Дата створення (спочатку старі)</a></li>
+                    <li><a class="dropdown-item" href="?sort=date_desc&filter=@currentFilter">Дата створення (спочатку нові)</a></li>
+                </ul>
+            </div>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary view-btn active" id="btnGridView"><i class="bi bi-grid-fill"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary view-btn" id="btnListView"><i class="bi bi-list-ul"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="filesContainer">
+
+        <div id="gridView" class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3">
+            @foreach (var f in Model)
+            {
+                // Визначаємо розширення та стиль
+                var ext = System.IO.Path.GetExtension(f.Name).TrimStart('.').ToUpper();
+                string iconClass = "bi-file-earmark";
+                string colorClass = "text-secondary";
+                string bgClass = "#f1f5f9"; // Default grey
+
+                // Логіка іконок
+                if (ext == "JPG" || ext == "JPEG" || ext == "PNG")
+                {
+                    iconClass = "bi-file-earmark-image";
+                    colorClass = "text-primary";
+                    bgClass = "#e0e7ff"; // Blue
+                }
+                else if (ext == "JS")
+                {
+                    iconClass = "bi-filetype-js";
+                    colorClass = "text-warning"; // Yellow-ish
+                    bgClass = "#fffbeb";
+                }
+                else if (ext == "C" || ext == "CPP" || ext == "CS")
+                {
+                    iconClass = "bi-file-earmark-code";
+                    if (ext == "C") iconClass = "bi-filetype-c";
+                    colorClass = "text-info";
+                    bgClass = "#ecfeff"; // Cyan
+                }
+                else if (ext == "XML" || ext == "HTML" || ext == "JSON")
+                {
+                    iconClass = "bi-file-earmark-code";
+                    colorClass = "text-success";
+                    bgClass = "#dcfce7"; // Green
+                }
+                else if (ext == "PDF")
+                {
+                    iconClass = "bi-file-earmark-pdf";
+                    colorClass = "text-danger";
+                    bgClass = "#fee2e2"; // Red
+                }
+
+                <div class="col">
+                    <div class="file-card shadow-sm" onclick="openPreview('@f.Name')">
+
+                        <div class="file-card-actions" onclick="event.stopPropagation()">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle shadow-sm opacity-75" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#" onclick="openPreview('@f.Name'); return false;"><i class="bi bi-eye me-2"></i>Переглянути</a></li>
+                                    <li><a class="dropdown-item" href="@Url.Action("Download", new { name = f.Name })"><i class="bi bi-download me-2"></i>Скачати</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" asp-action="Delete">
+                                            <input type="hidden" name="name" value="@f.Name" />
+                                            <button class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Видалити</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card-icon-area" style="background-color: @bgClass;">
+                            <i class="bi @iconClass @colorClass"></i>
+                            <span class="file-type-badge text-muted">@ext</span>
+                        </div>
+
+                        <div class="p-3 text-center">
+                            <div class="fw-semibold text-dark text-truncate" title="@f.Name">@f.Name</div>
+                            <div class="text-muted small mt-1">@String.Format("{0:N0} B", f.Size)</div>
+                            <div class="text-muted small" style="font-size: 0.7rem;">@f.CreatedAt.ToString("g")</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div id="listView" class="d-none">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <table class="table table-hover table-custom mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Ім'я файлу</th>
+                            <th>Створено</th>
+                            <th>Розмір</th>
+                            <th class="text-end pe-4">Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model)
+                        {
+                            <tr style="cursor: pointer;" onclick="openPreview('@f.Name')">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark fs-5 me-2 text-muted"></i>
+                                        <span class="fw-semibold text-dark">@f.Name</span>
+                                    </div>
+                                </td>
+                                <td class="text-muted small">@f.CreatedAt.ToString("g")</td>
+                                <td class="text-muted small">@String.Format("{0:N0} B", f.Size)</td>
+                                <td class="text-end pe-4" onclick="event.stopPropagation()">
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("Download", new { name = f.Name })" class="btn btn-sm btn-light text-primary"><i class="bi bi-download"></i></a>
+                                        <form method="post" asp-action="Delete" class="d-inline">
+                                            <input type="hidden" name="name" value="@f.Name" />
+                                            <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Перегляд файлу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 bg-light d-flex justify-content-center align-items-center" id="previewBody" style="min-height: 200px; max-height: 80vh; overflow: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="fileExistsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3 text-warning"><i class="bi bi-exclamation-circle display-4"></i></div>
+                <h5 class="fw-bold mb-3">Конфлікт імен</h5>
+                <p id="existsFileName" class="text-muted mb-4"></p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-light" data-bs-dismiss="modal">Скасувати</button>
+                    <button class="btn btn-outline-primary" id="duplicateBtn">Зберегти копію</button>
+                    <button class="btn btn-primary" id="replaceBtn">Замінити</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function openPreview(fileName) {
+            const modalEl = document.getElementById("previewModal");
+            const modal = new bootstrap.Modal(modalEl);
+            const body = document.getElementById("previewBody");
+
+            body.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+            modal.show();
+
+            try {
+                const res = await fetch(`@Url.Action("Preview", "Files")?name=${encodeURIComponent(fileName)}`);
+                if (!res.ok) throw new Error("Помилка завантаження");
+
+                const data = await res.json();
+                body.innerHTML = "";
+
+                if (data.type === "image") {
+                    body.innerHTML = `<img src="data:${data.mime};base64,${data.base64}" class="img-fluid" style="max-height: 70vh;" />`;
+                }
+                // JS файли будуть оброблені тут, якщо бекенд повертає для них type="text"
+                else if (data.type === "text") {
+                    body.innerHTML = `<div class="code-preview w-100 h-100">${data.text}</div>`;
+                } else {
+                    body.innerHTML = `<div class="text-center p-5"><i class="bi bi-file-earmark-break display-1 text-muted"></i><p class="mt-3">Попередній перегляд недоступний</p></div>`;
+                }
+            } catch (err) {
+                body.innerHTML = `<div class="text-danger p-3">Не вдалося завантажити попередній перегляд.</div>`;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // View Switcher logic
+            const btnGrid = document.getElementById('btnGridView');
+            const btnList = document.getElementById('btnListView');
+            const gridView = document.getElementById('gridView');
+            const listView = document.getElementById('listView');
+
+            if(btnGrid && btnList) {
+                btnGrid.addEventListener('click', () => {
+                    gridView.classList.remove('d-none');
+                    listView.classList.add('d-none');
+                    btnGrid.classList.add('active');
+                    btnList.classList.remove('active');
+                });
+                btnList.addEventListener('click', () => {
+                    gridView.classList.add('d-none');
+                    listView.classList.remove('d-none');
+                    btnGrid.classList.remove('active');
+                    btnList.classList.add('active');
+                });
+            }
+
+            // --- Drag & Drop & Upload Logic ---
+            const dropZone = document.getElementById("dropZone");
+            const fileInput = document.getElementById("fileInput");
+            const progressBar = document.getElementById("uploadProgressBar");
+            const progressContainer = document.getElementById("uploadProgressContainer");
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+            });
+            ['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, () => dropZone.classList.add('drag-over'), false));
+            ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'), false));
+
+            dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+            function handleFiles(files) {
+                if (!files.length) return;
+                progressContainer.classList.remove("d-none");
+                ([...files]).forEach(file => uploadFile(file));
+            }
+
+            async function uploadFile(file, overwrite = false) {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("overwrite", overwrite);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", "@Url.Action("Upload", "Files")", true);
+
+                xhr.upload.addEventListener("progress", e => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + "%";
+                        progressBar.textContent = percent + "%";
+                    }
+                });
+
+                xhr.onload = () => {
+                    if (xhr.status === 200) {
+                        progressBar.classList.add("bg-success");
+                        setTimeout(() => location.reload(), 500);
+                    } else if (xhr.status === 409) {
+                        showFileExistsModal(file);
+                    } else {
+                        progressBar.classList.add("bg-danger");
+                    }
+                };
+                xhr.send(formData);
+            }
+
+            function showFileExistsModal(file) {
+                const modal = new bootstrap.Modal(document.getElementById("fileExistsModal"));
+                document.getElementById("existsFileName").textContent = `Файл "${file.name}" вже існує.`;
+                modal.show();
+
+                document.getElementById("replaceBtn").onclick = () => {
+                    modal.hide();
+                    uploadFile(file, true);
+                };
+                document.getElementById("duplicateBtn").onclick = () => {
+                    modal.hide();
+                    const name = file.name;
+                    const lastDot = name.lastIndexOf(".");
+                    const base = lastDot !== -1 ? name.substring(0, lastDot) : name;
+                    const ext = lastDot !== -1 ? name.substring(lastDot) : "";
+                    uploadFile(new File([file], `${base}_copy${ext}`, { type: file.type }), false);
+                };
+            }
+        });
+    </script>
+}
